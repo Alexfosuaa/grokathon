@@ -157,10 +157,10 @@ export function buildPlan(
   const examBlocks: PlanBlock[] = exams.map(({ course, slot }) => ({
     id: `exam-${course.id}`,
     when: slot ? `${slot.day}, ${slot.time}` : course.name,
-    kicker: deanMoves && course.id === move?.id ? "Ask the dean to move this one" : `Group ${course.group} · ${formatLabel(course.format)}`,
+    kicker: deanMoves && course.id === move?.id ? "Ask your college dean to move this one" : `Group ${course.group} · ${formatLabel(course.format)}`,
     lines: [
       deanMoves && course.id === move?.id
-        ? `Sit ${course.name} unless the dean has already moved it. Keep one review ready either way.`
+        ? `Sit ${course.name} unless your residential college dean has already moved it. Keep one review ready either way.`
         : `Sit ${course.name}. Afterward, leave the next subject closed for two hours.`,
     ],
     tone: "exam",
@@ -174,7 +174,7 @@ export function buildPlan(
     .map((course) => {
       const left = remaining.get(course.id) ?? 0
       if (course.group === "0") {
-        return `${course.name} still needs about ${left}h. Cut the scope. A finished short paper beats an unfinished long one on December 22.`
+        return `${course.name} still needs about ${left}h. Cut the scope. A finished short essay beats an unfinished long one by the end of finals on December 22, unless the syllabus names an earlier day.`
       }
       if (course.group === "50") {
         return `${course.name} is group 50, so the grid cannot place it. Put the syllabus time in the note, and budget ${left}h around it.`
@@ -187,22 +187,22 @@ export function buildPlan(
 
   const earlyNames = early.map((course) => course.name)
   let headline = "Add your courses. The plan follows the order of the real exam grid."
-  let detail = "Reading period is Friday evening through Monday, about 23 focused hours. The empty weekend of December 19–20 holds about 11 more."
+  let detail = "Reading period starts Friday, December 11, at 5:30 p.m., when classes end, and runs through Monday, about 23 focused hours. The weekend of December 19–20 has no examinations and holds about 11 more."
   if (courses.length > 0 && rules.firstTwoDays && move) {
-    headline = `${early.length} exams fall on December 15 and 16. A dean can move ${move.name}.`
+    headline = `${early.length} exams fall on December 15 and 16. Your residential college dean can move ${move.name}.`
     detail = deanMoves
-      ? `This plan gives reading period to what still sits in those two days, and parks ${move.name} on the empty weekend. Send the email Monday morning. Keep one pass on it until the dean answers.`
+      ? `This plan gives reading period to what still sits in those two days, and parks ${move.name} on the empty weekend of December 19–20. Send the note Monday morning. Keep one pass on it until the dean answers. A postponement is recorded as ABX until the makeup.`
       : `This plan keeps ${move.name} on the calendar. Reading period goes to the earliest exams, in order: ${earlyNames.join(", ")}.`
   } else if (courses.length > 0 && rules.qualifies && move) {
-    headline = `This load meets a clustering rule. A dean can move ${move.name}.`
+    headline = `This load meets a clustering rule. Your residential college dean can move ${move.name}.`
     detail = deanMoves
       ? `${move.name} is parked later in the plan. Everything earlier stays put.`
-      : `Until a dean says yes, study in exam order.`
+      : `Until your college dean says yes, study in exam order.`
   } else if (courses.length > 0 && exception && move) {
-    headline = `A holy day or a varsity contest lets the dean move ${move.name}.`
-    detail = "The clustering rules are separate. Travel is not a reason."
+    headline = `A religious holy day or an intercollegiate varsity contest lets your college dean move ${move.name}.`
+    detail = "The clustering rules are separate. Travel is not a reason. Club and intramural contests are not a reason."
   } else if (courses.length > 0) {
-    headline = "Nothing in this load qualifies for a dean postponement."
+    headline = "Nothing in this load qualifies for a postponement from your residential college dean."
     detail = `Study in exam order. ${papers.length > 0 ? "The paper still wants the empty weekend." : "The empty weekend is recovery, unless a later exam is still uncovered."}`
   }
 
@@ -269,10 +269,10 @@ function draftEmail(rules: DeanRules, early: Course[], move: Course, exception: 
         return `${course.name} (group ${course.group}${slot ? `, ${slot.shortDay} ${slot.time}` : ""})`
       })
       .join("; ")
-    return `Dear Dean, I have ${early.length} final examinations on December 15 and 16: ${list}. Academic Regulations, section H, allow a residential college dean to postpone an examination when three fall on the first two full days. I am asking to move ${move.name}. I will keep studying it until I hear back.`
+    return `Dear Dean, I have ${early.length} final examinations on December 15 and 16: ${list}. Academic Regulations, section H, allow a residential college dean to postpone an examination when three fall on the first two full days of the final examination period. I am asking to postpone ${move.name}. I will keep studying it until I hear back. If you authorize the postponement, I understand the registrar records ABX until the makeup.`
   }
   if (exception && !rules.qualifies) {
-    return `Dear Dean, ${move.name} conflicts with a religious holy day I observe, or with a varsity contest. Section H allows a residential college dean to postpone that examination.`
+    return `Dear Dean, ${move.name} conflicts with a religious holy day I observe, or with an intercollegiate varsity contest. Section H allows a residential college dean to postpone that examination. Club and intramural contests are not a reason, and neither are my travel plans.`
   }
-  return `Dear Dean, my final examinations cluster closely enough that section H allows a residential college dean to postpone one. I am asking to move ${move.name}.`
+  return `Dear Dean, my final examinations cluster closely enough that section H allows a residential college dean to postpone one: three in a row, or three inside any four consecutive slots on consecutive days. I am asking to postpone ${move.name}. Any reason outside section H would go to the Committee on Honors and Academic Standing.`
 }

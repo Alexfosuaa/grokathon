@@ -30,11 +30,15 @@ import {
   slotFor,
   type FormatId,
 } from "@/lib/catalog"
-import { buildPlan, hoursFor, noteFor } from "@/lib/plan"
+import { buildPlan, hoursFor } from "@/lib/plan"
 import { SAMPLE_COURSES, SAMPLE_NOTES } from "@/lib/sample"
-import type { Course, ExamNote } from "@/lib/types"
+import { SemesterPlan } from "@/components/semester-plan"
+import { YaleMark } from "@/components/yale-mark"
+import { YaleSignIn } from "@/components/yale-sign-in"
+import type { Course, Designation, ExamNote } from "@/lib/types"
+import { DESIGNATIONS } from "@/lib/types"
 
-const COURSE_KEY = "reading-period-courses-v1"
+const COURSE_KEY = "reading-period-courses-v2"
 const NOTE_KEY = "reading-period-notes-v1"
 
 const emptyDraft = {
@@ -42,6 +46,7 @@ const emptyDraft = {
   instructor: "",
   group: "34",
   format: "blue-book" as FormatId,
+  designation: "HU" as Designation,
   note: "",
 }
 
@@ -63,6 +68,10 @@ export function ReadingPeriod() {
     season: "December 2025",
   })
   const [formError, setFormError] = useState("")
+  const [session, setSession] = useState<{ email: string; netid: string } | null>(null)
+  const [tab, setTab] = useState<"today" | "courses" | "semester" | "finals">("today")
+  const [semesterTab, setSemesterTab] = useState<"week" | "grades" | "calendar">("week")
+  const [finalsTab, setFinalsTab] = useState<"grid" | "plan" | "dean">("grid")
 
   useEffect(() => {
     const storedCourses = readJson<Course[]>(COURSE_KEY)
@@ -75,6 +84,8 @@ export function ReadingPeriod() {
       const extras = storedNotes.filter((note) => !note.sample)
       setNotes([...SAMPLE_NOTES, ...extras])
     }
+    const storedSession = readJson<{ email: string; netid: string }>("ylearn-session-v1")
+    if (storedSession?.email?.endsWith("@yale.edu") && storedSession.netid) setSession(storedSession)
     setReady(true)
   }, [])
 
@@ -112,6 +123,7 @@ export function ReadingPeriod() {
       instructor: draft.instructor.trim(),
       group: draft.group,
       format: draft.format,
+      designation: draft.designation,
       note: draft.note.trim(),
     }
     setCourses((current) => [...current, course])
@@ -161,118 +173,166 @@ export function ReadingPeriod() {
     setFormError("")
   }
 
+  if (!ready) return <div className="min-h-screen bg-white" />
+  if (!session) {
+    return (
+      <YaleSignIn
+        onSignIn={(next) => {
+          localStorage.setItem("ylearn-session-v1", JSON.stringify(next))
+          setSession(next)
+        }}
+      />
+    )
+  }
+
+  const tabs = [
+    ["today", "Today"],
+    ["courses", "Courses"],
+    ["semester", "Semester"],
+    ["finals", "Finals"],
+  ] as const
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-foreground/15">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-medium tracking-[0.22em] text-primary uppercase">
-              Yale College · Fall 2026
-            </p>
-            <h1 className="font-heading text-4xl tracking-tight sm:text-5xl">Reading Period</h1>
-          </div>
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground sm:text-right">
-            Your courses, the real exam grid, and a plan for the days between the last class and the last blue book.
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8">
-        <section className="flex flex-col gap-3 border border-foreground/15 bg-card p-4 sm:p-5">
-          <p className="font-heading text-2xl leading-snug">{plan.headline}</p>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">{plan.detail}</p>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Badge variant="secondary">{plan.wantedHours}h this load wants</Badge>
-            <Badge variant="outline">{plan.heldHours}h the calendar holds</Badge>
-            {plan.rules.firstTwoDays && <Badge variant="destructive">First two days</Badge>}
-            {plan.rules.consecutive && <Badge variant="destructive">Back to back</Badge>}
-            {plan.rules.fourSlot && <Badge variant="destructive">Four-slot window</Badge>}
-          </div>
-          {plan.rules.qualifies && plan.move && (
-            <div className="flex flex-col gap-3 border-t border-foreground/10 pt-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={deanMoves}
-                  onChange={(event) => setDeanMoves(event.target.checked)}
-                />
-                Plan as if the dean moves {plan.move.name}
-              </label>
-              {plan.email && (
-                <div>
-                  <Button variant="outline" size="sm" onClick={() => setShowEmail((open) => !open)}>
-                    {showEmail ? "Hide the dean email" : "Draft the dean email"}
-                  </Button>
-                  {showEmail && (
-                    <p className="mt-3 max-w-3xl text-sm leading-relaxed">{plan.email}</p>
-                  )}
-                </div>
-              )}
+    <div className="min-h-screen bg-white text-[#00356B]">
+      <header className="bg-[#00356B] text-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <YaleMark className="h-8 w-8" />
+            <div>
+              <p className="text-lg font-semibold leading-none">YLearn</p>
+              <p className="mt-1 text-[11px] text-[#A7C4E5]">Yale College · Fall 2026</p>
             </div>
-          )}
-          <div className="flex flex-col gap-2 text-sm sm:flex-row sm:gap-6">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={holyDay} onChange={(event) => setHolyDay(event.target.checked)} />
-              A holy day conflicts with the selected course
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={varsity} onChange={(event) => setVarsity(event.target.checked)} />
-              A varsity contest conflicts with the selected course
-            </label>
           </div>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Groups and dates are the Fall 2026 grid in the Yale College Programs of Study. Common groups such as 61, 63, 64, 65, and 69 are typical assignments, not a promise about every section. The postponement rules are Academic Regulations, section H. The dean decides. Travel is not a reason. The checker treats Saturday and Sunday as a break.
-          </p>
-        </section>
+          <button
+            type="button"
+            className="text-sm text-[#A7C4E5]"
+            onClick={() => {
+              localStorage.removeItem("ylearn-session-v1")
+              setSession(null)
+            }}
+          >
+            {session.netid}
+          </button>
+        </div>
+        <nav className="mx-auto flex max-w-5xl gap-1 px-2">
+          {tabs.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={`px-3 py-2 text-sm ${tab === id ? "bg-white text-[#00356B]" : "text-[#A7C4E5]"}`}
+              onClick={() => setTab(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </header>
+      {tab === "semester" && (
+        <div className="border-b border-[#c5d7ea] bg-[#e7f0fa]">
+          <div className="mx-auto flex max-w-5xl gap-4 px-4 text-sm">
+            {(["week", "grades", "calendar"] as const).map((id) => (
+              <button key={id} type="button" className={`py-2 capitalize ${semesterTab === id ? "border-b-2 border-[#00356B] font-medium" : "text-[#4d6d8c]"}`} onClick={() => setSemesterTab(id)}>
+                {id}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {tab === "finals" && (
+        <div className="border-b border-[#c5d7ea] bg-[#e7f0fa]">
+          <div className="mx-auto flex max-w-5xl gap-4 px-4 text-sm">
+            {(["grid", "plan", "dean"] as const).map((id) => (
+              <button key={id} type="button" className={`py-2 capitalize ${finalsTab === id ? "border-b-2 border-[#00356B] font-medium" : "text-[#4d6d8c]"}`} onClick={() => setFinalsTab(id)}>
+                {id === "dean" ? "College dean" : id}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {plan.clashes.map((clash) => (
-          <p key={clash} className="border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {clash}
-          </p>
-        ))}
-
-        <ExamGrid courses={courses} moveId={deanMoves ? plan.move?.id ?? null : null} onSelect={setSelectedId} selectedId={selected?.id ?? null} />
-
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6">
+        {tab === "today" && (
+          <SemesterPlan
+            courses={courses}
+            setCourses={setCourses}
+            section="today"
+            onOpenCourse={(id) => {
+              setSelectedId(id)
+              setTab("semester")
+              setSemesterTab("grades")
+            }}
+          />
+        )}
+        {tab === "semester" && (
+          <SemesterPlan courses={courses} setCourses={setCourses} section={semesterTab} />
+        )}
+        {tab === "finals" && finalsTab === "grid" && (
+          <ExamGrid courses={courses} moveId={deanMoves ? plan.move?.id ?? null : null} onSelect={(id) => { setSelectedId(id); setTab("courses") }} selectedId={selected?.id ?? null} />
+        )}
+        {tab === "finals" && finalsTab === "plan" && (
           <section className="flex flex-col gap-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-heading text-2xl">How to spend it</h2>
-              <p className="text-xs text-muted-foreground">Earliest exam first</p>
+            <p className="text-lg font-semibold">{plan.headline}</p>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <Badge variant="secondary">{plan.wantedHours}h wanted</Badge>
+              <Badge variant="outline">{plan.heldHours}h open</Badge>
             </div>
             <ol className="flex flex-col">
               {plan.blocks.map((block) => (
-                <li key={block.id} className="grid grid-cols-[7.5rem_1fr] gap-3 border-t border-foreground/10 py-4 sm:grid-cols-[11rem_1fr]">
+                <li key={block.id} className="grid grid-cols-[7.5rem_1fr] gap-3 border-t border-[#c5d7ea] py-3">
                   <div>
-                    <p className="text-xs tracking-wide text-primary uppercase">{block.kicker}</p>
+                    <p className="text-xs text-[#286dc0] uppercase">{block.kicker}</p>
                     <p className="text-sm font-medium">{block.when}</p>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div>
                     {block.lines.map((line) => (
-                      <p key={line} className="text-sm leading-relaxed">
-                        {line}
-                      </p>
+                      <p key={line} className="text-sm">{line}</p>
                     ))}
                   </div>
                 </li>
               ))}
             </ol>
-            {plan.uncovered.length > 0 && (
-              <div className="border border-foreground/15 bg-card p-4">
-                <h3 className="font-heading text-lg">What does not fit</h3>
-                <ul className="mt-2 flex flex-col gap-2">
-                  {plan.uncovered.map((line) => (
-                    <li key={line} className="text-sm leading-relaxed">
-                      {line}
-                    </li>
-                  ))}
-                </ul>
+          </section>
+        )}
+        {tab === "finals" && finalsTab === "dean" && (
+          <section className="flex max-w-xl flex-col gap-3">
+            <p className="text-lg font-semibold">{plan.move ? `Ask about ${plan.move.name}` : "No postponement on this load"}</p>
+            <ul className="list-disc pl-4 text-sm text-[#4d6d8c]">
+              <li>3 exams on Dec 15–16</li>
+              <li>3 back to back, or 3 in any 4 slots</li>
+              <li>Holy day or varsity</li>
+              <li>Your college dean decides. Travel does not count.</li>
+            </ul>
+            {plan.rules.qualifies && plan.move && (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={deanMoves} onChange={(event) => setDeanMoves(event.target.checked)} />
+                Plan as if your college dean postpones {plan.move.name}
+              </label>
+            )}
+            <div className="flex flex-col gap-2 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={holyDay} onChange={(event) => setHolyDay(event.target.checked)} />
+                Religious holy day
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={varsity} onChange={(event) => setVarsity(event.target.checked)} />
+                Intercollegiate varsity
+              </label>
+            </div>
+            {plan.email && (
+              <div>
+                <Button variant="outline" size="sm" onClick={() => setShowEmail((open) => !open)}>
+                  {showEmail ? "Hide note" : "Draft the note"}
+                </Button>
+                {showEmail && <p className="mt-3 text-sm leading-relaxed">{plan.email}</p>}
               </div>
             )}
           </section>
-
-          <section className="flex flex-col gap-4 lg:sticky lg:top-4">
+        )}
+        {tab === "courses" && (
+        <>
+          <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-heading text-2xl">Your courses</h2>
+              <h2 className="text-lg font-semibold">Courses</h2>
               <Button size="sm" onClick={() => { setAdding(true); setFormError("") }}>
                 Add a course
               </Button>
@@ -290,9 +350,9 @@ export function ReadingPeriod() {
                     >
                       <span className="flex items-start justify-between gap-3">
                         <span>
-                          <span className="block font-medium">{course.name}</span>
+                          <span className="block font-medium">{course.designation ? `${course.designation} · ` : ""}{course.name}</span>
                           <span className={`mt-1 block text-xs ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                            {slot ? `${slot.shortDay} · ${slot.time}` : course.group === "0" ? "Paper due Tue Dec 22" : "Time arranged"}
+                            {slot ? `Group ${course.group} · ${slot.shortDay} · ${slot.time}` : course.group === "0" ? "Group 0 · term essay, no exam slot" : "Group 50 · time arranged"}
                             {" · "}
                             {formatLabel(course.format)}
                             {" · "}
@@ -347,27 +407,42 @@ export function ReadingPeriod() {
                 }}
                 onAddNote={addNote}
                 onDeleteNote={(id) => setNotes((current) => current.filter((note) => note.id !== id))}
-                using={noteFor(selected, notes)}
               />
             )}
           </section>
-        </div>
+        </>
+        )}
       </main>
 
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add a course</DialogTitle>
-            <DialogDescription>
-              Use the exam group from Yale Course Search. The meeting pattern is what places it on the grid.
-            </DialogDescription>
+            <DialogDescription>Exam group from Yale Course Search.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <Field label="Course">
-              <Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Introductory economics" />
+              <Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="PHYS 1800" />
             </Field>
-            <Field label="Instructor">
-              <Input value={draft.instructor} onChange={(event) => setDraft({ ...draft, instructor: event.target.value })} placeholder="Name from the syllabus" />
+            <Field label="Instructor of record">
+              <Input value={draft.instructor} onChange={(event) => setDraft({ ...draft, instructor: event.target.value })} placeholder="From the syllabus, not the TF" />
+            </Field>
+            <Field label="Distributional designation">
+              <Select
+                value={draft.designation}
+                onValueChange={(value) => {
+                  if (value) setDraft({ ...draft, designation: value as Designation })
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DESIGNATIONS.map((designation) => (
+                    <SelectItem key={designation} value={designation}>{designation}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Exam group">
               <Select
@@ -437,7 +512,7 @@ function ExamGrid({
           <DayStack key={day.short} day={day} courses={courses} selectedId={selectedId} moveId={moveId} onSelect={onSelect} />
         ))}
         <p className="border border-dashed border-foreground/20 px-3 py-3 text-sm text-muted-foreground">
-          Saturday and Sunday, December 19–20. No exams. Other coursework is due Sunday. Term papers are due Tuesday the 22nd.
+          Saturday and Sunday, December 19–20. The Programs of Study schedule no final examinations on the weekend. Tuesday at 7:00 p.m. is makeup examinations only.
         </p>
         {GRID_DAYS.slice(4).map((day) => (
           <DayStack key={day.short} day={day} courses={courses} selectedId={selectedId} moveId={moveId} onSelect={onSelect} />
@@ -499,14 +574,16 @@ function GridRow({
         if (group === "weekend") {
           return (
             <div key={`${time}-weekend`} className="border border-dashed border-foreground/15 bg-muted/60 px-2 py-2 text-xs leading-snug text-muted-foreground">
-              {timeIndex === 1 ? "No exams. Papers wait here." : ""}
+              {timeIndex === 1 ? "No final examinations." : ""}
             </div>
           )
         }
-        const matches = group ? courses.filter((course) => course.group === group) : []
+        const caption = group === "makeup" ? "Makeup only" : group ? null : "No exam"
+        const matches = group && group !== "makeup" ? courses.filter((course) => course.group === group) : []
         return (
           <div key={`${time}-${index}`} className="min-h-16 border border-foreground/10 bg-card p-1.5">
-            {matches.length === 0 && <span className="text-xs text-muted-foreground/40">{group ? "" : "—"}</span>}
+            {caption && <span className="text-xs text-muted-foreground/60">{caption}</span>}
+            {!caption && matches.length === 0 && <span className="text-xs text-muted-foreground/40" />}
             {matches.map((course) => (
               <button
                 key={course.id}
@@ -547,12 +624,14 @@ function DayStack({
     <div className="border border-foreground/15 bg-card">
       <p className="border-b border-foreground/10 px-3 py-2 text-xs font-medium tracking-wide uppercase">{day.short}</p>
       {day.times.map((group, index) => {
-        const matches = group ? courses.filter((course) => course.group === group) : []
+        const caption = group === "makeup" ? "Makeup only" : group ? null : "No exam"
+        const matches = group && group !== "makeup" ? courses.filter((course) => course.group === group) : []
         return (
           <div key={TIME_LABELS[index]} className="flex items-start gap-3 border-t border-foreground/10 px-3 py-2">
             <span className="w-16 shrink-0 text-xs text-muted-foreground">{TIME_LABELS[index]}</span>
             <div className="flex flex-1 flex-col gap-1">
-              {matches.length === 0 && <span className="text-xs text-muted-foreground/60">{group ? "Open" : "—"}</span>}
+              {caption && <span className="text-xs text-muted-foreground/60">{caption}</span>}
+              {!caption && matches.length === 0 && <span className="text-xs text-muted-foreground/60">Open</span>}
               {matches.map((course) => (
                 <button
                   key={course.id}
@@ -582,7 +661,6 @@ function CoursePanel({
   onRemove,
   onAddNote,
   onDeleteNote,
-  using,
 }: {
   course: Course
   notes: ExamNote[]
@@ -594,16 +672,15 @@ function CoursePanel({
   onRemove: () => void
   onAddNote: () => void
   onDeleteNote: (id: string) => void
-  using: ExamNote | null
 }) {
   const slot = slotFor(course.group)
   return (
     <div className="flex flex-col gap-4 border border-foreground/15 bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-heading text-xl">{course.name}</h3>
+          <h3 className="font-heading text-xl">{course.designation ? `${course.designation} · ` : ""}{course.name}</h3>
           <p className="text-xs text-muted-foreground">
-            {slot ? `${slot.day}, ${slot.time}` : course.group === "0" ? "Term paper due Tuesday, December 22" : "Group 50, time from the syllabus"}
+            {slot ? `Group ${course.group} · ${slot.day}, ${slot.time}` : course.group === "0" ? "Group 0 · term essay or other final exercise, no regular exam" : "Group 50 · HTBA, time from the syllabus"}
             {" · "}
             {formatLabel(course.format)}
           </p>
@@ -612,8 +689,8 @@ function CoursePanel({
           Remove
         </Button>
       </div>
-      <Field label="Instructor, for matching notes">
-        <Input value={course.instructor} onChange={(event) => onInstructor(event.target.value)} placeholder="Name from the syllabus" />
+      <Field label="Instructor of record, for matching notes">
+        <Input value={course.instructor} onChange={(event) => onInstructor(event.target.value)} placeholder="From the syllabus, not the TF" />
       </Field>
       <Field label="Your own prep note">
         <Textarea
@@ -625,10 +702,7 @@ function CoursePanel({
       </Field>
       <div>
         <h4 className="text-sm font-medium">What students remember</h4>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Sample notes are invented so the plan has something to read. A note you add is saved on this device and becomes the advice the plan uses
-          {using ? `, currently the ${using.sample ? "sample" : "note"} from ${using.season}` : ""}.
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">Samples are labeled. Your notes stay on this device.</p>
       </div>
       <ul className="flex flex-col gap-3">
         {notes.map((note) => (

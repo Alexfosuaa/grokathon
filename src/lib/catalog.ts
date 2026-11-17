@@ -44,7 +44,7 @@ export const GRID_DAYS: { short: string; times: (string | null)[] }[] = [
   { short: "Thu 17", times: ["22", "65", "33"] },
   { short: "Fri 18", times: ["37", "26", null] },
   { short: "Mon 21", times: ["69", "27", "31"] },
-  { short: "Tue 22", times: ["36", "32", null] },
+  { short: "Tue 22", times: ["36", "32", "makeup"] },
 ]
 
 export const TIME_LABELS = ["9:00 a.m.", "2:00 p.m.", "7:00 p.m."]
@@ -66,7 +66,7 @@ export const GROUP_OPTIONS: { group: string; label: string }[] = [
   { group: "31", label: "31 · MWF 8:20 · Mon Dec 21, 7:00 p.m." },
   { group: "36", label: "36 · MWF 1:30 · Tue Dec 22, 9:00 a.m." },
   { group: "32", label: "32 · MWF 9:25 · Tue Dec 22, 2:00 p.m." },
-  { group: "0", label: "0 · No regular exam · paper due Tue Dec 22" },
+  { group: "0", label: "0 · No regular exam · term essay or other final exercise" },
   { group: "50", label: "50 · Time arranged on the syllabus" },
 ]
 
