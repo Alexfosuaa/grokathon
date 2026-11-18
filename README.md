@@ -35,6 +35,17 @@ This project was built during the Grokathon using Grok AI as the development ass
 
 The in-app AI assistant is also powered by Grok, providing real-time study suggestions and adaptive planning.
 
+## Adaptive Learning (Coming Soon)
+
+YScholar's next milestone is a personalized learning model that adapts to each student's study behavior over time. By tracking how long a student spends studying each subject, which study strategies they use, when they study most effectively, and how their scores improve, Grok AI can build a profile of each learner. Over time the model will:
+
+- **Learn your pace** — Predict how many hours you actually need per course based on your past study sessions, not just generic estimates.
+- **Identify weak spots** — Detect which topics or formats (problem sets vs. essays vs. blue books) take you longer, and shift study time accordingly.
+- **Optimize scheduling** — Learn when you're most productive (morning vs. night) and suggest study blocks during your peak focus windows.
+- **Improve recommendations** — Weight Huddle tips from students with similar study profiles, so the advice you see is from people who learn like you.
+
+The foundation is already in place: YScholar tracks courses, grades, exam formats, and study plans. The next step is feeding that data back into Grok to create a continuously improving, student-specific study model.
+
 ## Tech stack
 
 - **Next.js 15** with App Router
@@ -42,12 +53,14 @@ The in-app AI assistant is also powered by Grok, providing real-time study sugge
 - **Tailwind CSS 4** for styling
 - **shadcn/ui** components
 - **TypeScript** throughout
+- **Grok API** (xAI) for real-time AI chat and study assistance
 - **localStorage** for persistence (no backend needed)
 
 ## Run it
 
 ```bash
 npm install
+echo "GROK_API_KEY=your-xai-api-key" > .env.local
 npm run dev
 ```
 

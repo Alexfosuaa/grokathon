@@ -182,6 +182,12 @@ export function YScholar() {
   const [onboardDraft, setOnboardDraft] = useState({ name: "", year: "2028", college: "Branford", major: "" })
   const [loginEmail, setLoginEmail] = useState("")
   const [loginError, setLoginError] = useState("")
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
+    { role: "assistant", content: "Hi! I’m your Grok AI study assistant. Ask me anything about your courses, exams, or study strategy." },
+  ])
+  const [chatInput, setChatInput] = useState("")
+  const [chatLoading, setChatLoading] = useState(false)
 
   useEffect(() => {
     const stored = readJson<UserProfile>(PROFILE_KEY)
@@ -255,14 +261,75 @@ export function YScholar() {
     setAdding(false)
   }
 
+  function buildContext() {
+    return courses.map((c) => {
+      const slot = slotFor(c.group)
+      return `${c.name} (target: ${c.targetGrade ?? "B+"}, exam: ${slot ? `${slot.day} ${slot.time}` : c.group === "0" ? "term essay, no exam slot" : "time arranged"}, format: ${formatLabel(c.format)})`
+    }).join("; ")
+  }
+
+  async function sendChat() {
+    const text = chatInput.trim()
+    if (!text || chatLoading) return
+    const userMsg = { role: "user" as const, content: text }
+    const all = [...chatMessages, userMsg]
+    setChatMessages(all)
+    setChatInput("")
+    setChatLoading(true)
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: all.filter((m) => m.content).map((m) => ({ role: m.role, content: m.content })),
+          context: buildContext(),
+        }),
+      })
+      if (!res.ok || !res.body) {
+        const err = await res.text().catch(() => "Unknown error")
+        setChatMessages((prev) => [...prev, { role: "assistant", content: `Error: ${err}` }])
+        return
+      }
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let reply = ""
+      setChatMessages((prev) => [...prev, { role: "assistant", content: "" }])
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        for (const line of chunk.split("\n")) {
+          const trimmed = line.trim()
+          if (trimmed.startsWith("data: ") && trimmed !== "data: [DONE]") {
+            try {
+              const data = JSON.parse(trimmed.slice(6))
+              const delta = data.choices?.[0]?.delta?.content
+              if (delta) {
+                reply += delta
+                const r = reply
+                setChatMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: r }; return u })
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: "Could not reach Grok AI. Check your API key." }])
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
   if (!ready) return <div className="min-h-screen bg-white" />
 
   if (!profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#00356B] via-[#002147] to-[#001a3a] text-white flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <YaleMark className="h-20 w-20 mb-6" />
-          <h1 className="text-5xl font-bold tracking-tight font-heading">YScholar</h1>
+          <h1 className="text-5xl font-black tracking-tight font-heading flex items-center -space-x-0.5">
+            <YaleMark className="h-14 w-14" />
+            <span>Scholar</span>
+          </h1>
           <p className="mt-3 text-lg text-[#A7C4E5]">Your AI-powered study companion at Yale</p>
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-2 text-sm text-[#A7C4E5]/80">
             <span>AI Study Planner</span>
@@ -285,9 +352,9 @@ export function YScholar() {
     return (
       <div className="min-h-screen bg-white text-[#00356B] flex flex-col">
         <header className="bg-[#00356B] text-white px-4 py-3">
-          <div className="flex items-center gap-2 max-w-md mx-auto">
+          <div className="flex items-center -space-x-0.5 max-w-md mx-auto">
             <YaleMark className="h-7 w-7" />
-            <span className="text-lg font-semibold font-heading">YScholar</span>
+            <span className="text-lg font-black font-heading">Scholar</span>
           </div>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
@@ -338,7 +405,7 @@ export function YScholar() {
                 </div>
                 <div className="border border-[#c5d7ea] p-4">
                   <p className="font-medium">Sample course load</p>
-                  <p className="text-sm text-[#4d6d8c] mt-1">6 courses across sciences, humanities, and languages.</p>
+                  <p className="text-sm text-[#4d6d8c] mt-1">4 courses across sciences, humanities, and languages.</p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {SAMPLE_COURSES.map((c) => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
                   </div>
@@ -360,10 +427,10 @@ export function YScholar() {
     <div className="min-h-screen bg-white text-[#00356B] flex flex-col">
       <header className="bg-[#00356B] text-white shrink-0 sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <YaleMark className="h-8 w-8" />
+          <div className="flex items-baseline -space-x-0.5">
+            <YaleMark className="h-7 w-7 self-center" />
             <div>
-              <p className="text-lg font-semibold leading-none font-heading">YScholar</p>
+              <p className="text-lg font-black leading-none font-heading">Scholar</p>
               <p className="text-[11px] text-[#A7C4E5]">Yale College &middot; Fall 2026</p>
             </div>
           </div>
@@ -377,6 +444,15 @@ export function YScholar() {
             </div>
             <button type="button" className="text-sm text-[#A7C4E5] hover:text-white" onClick={() => setTab("settings")}>
               {profile.name || profile.netid}
+            </button>
+            <button type="button" className="text-xs text-[#A7C4E5]/60 hover:text-white" onClick={() => {
+              localStorage.removeItem(PROFILE_KEY)
+              localStorage.removeItem(COURSE_KEY)
+              localStorage.removeItem(NOTE_KEY)
+              localStorage.removeItem(HUDDLE_KEY)
+              setProfile(null)
+            }}>
+              Sign out
             </button>
           </div>
         </div>
@@ -756,6 +832,38 @@ export function YScholar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {profile.onboarded && (
+        <>
+          {!chatOpen && (
+            <button type="button" onClick={() => setChatOpen(true)} className="fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full bg-[#00356B] text-white shadow-lg flex items-center justify-center hover:bg-[#286dc0] transition-colors">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+            </button>
+          )}
+          {chatOpen && (
+            <div className="fixed bottom-5 right-5 z-50 w-[22rem] rounded-lg border border-[#c5d7ea] bg-white shadow-2xl flex flex-col" style={{ height: "28rem" }}>
+              <div className="flex items-center justify-between bg-[#00356B] text-white px-4 py-3 rounded-t-lg">
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" /></span>
+                  <span className="text-sm font-semibold">Grok AI Assistant</span>
+                </div>
+                <button type="button" onClick={() => setChatOpen(false)} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2.5 text-sm">
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={msg.role === "user" ? "self-end bg-[#00356B] text-white px-3 py-2 rounded-lg rounded-br-none max-w-[85%]" : "self-start bg-[#e7f0fa] text-[#00356B] px-3 py-2 rounded-lg rounded-bl-none max-w-[85%]"}>
+                    {msg.content || (chatLoading ? "…" : "")}
+                  </div>
+                ))}
+              </div>
+              <form className="border-t border-[#c5d7ea] px-3 py-2 flex gap-2" onSubmit={(e) => { e.preventDefault(); sendChat() }}>
+                <input className="flex-1 text-sm border border-[#c5d7ea] rounded px-2.5 py-1.5 outline-none focus:border-[#286dc0] text-[#00356B]" placeholder="Ask about your courses..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} disabled={chatLoading} />
+                <button type="submit" disabled={chatLoading} className="bg-[#00356B] text-white px-3 py-1.5 rounded text-sm hover:bg-[#286dc0] disabled:opacity-50">Send</button>
+              </form>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
