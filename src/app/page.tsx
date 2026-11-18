@@ -1,5 +1,5 @@
-import { ReadingPeriod } from "@/components/reading-period"
+import { YScholar } from "@/components/yscholar"
 
 export default function Home() {
-  return <ReadingPeriod />
+  return <YScholar />
 }

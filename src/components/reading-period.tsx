@@ -227,30 +227,28 @@ export function ReadingPeriod() {
           ))}
         </nav>
       </header>
-      {tab === "semester" && (
-        <div className="border-b border-[#c5d7ea] bg-[#e7f0fa]">
-          <div className="mx-auto flex max-w-5xl gap-4 px-4 text-sm">
-            {(["week", "grades", "calendar"] as const).map((id) => (
-              <button key={id} type="button" className={`py-2 capitalize ${semesterTab === id ? "border-b-2 border-[#00356B] font-medium" : "text-[#4d6d8c]"}`} onClick={() => setSemesterTab(id)}>
-                {id}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {tab === "finals" && (
-        <div className="border-b border-[#c5d7ea] bg-[#e7f0fa]">
-          <div className="mx-auto flex max-w-5xl gap-4 px-4 text-sm">
-            {(["grid", "plan", "dean"] as const).map((id) => (
-              <button key={id} type="button" className={`py-2 capitalize ${finalsTab === id ? "border-b-2 border-[#00356B] font-medium" : "text-[#4d6d8c]"}`} onClick={() => setFinalsTab(id)}>
-                {id === "dean" ? "College dean" : id}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6">
+      <div className="mx-auto flex max-w-5xl">
+        {(tab === "semester" || tab === "finals") && (
+          <nav className="w-40 shrink-0 border-r border-[#c5d7ea] bg-[#e7f0fa] pt-6">
+            <div className="flex flex-col text-sm">
+              {tab === "semester" &&
+                (["week", "grades", "calendar"] as const).map((id) => (
+                  <button key={id} type="button" className={`px-4 py-2 text-left capitalize ${semesterTab === id ? "border-r-2 border-[#00356B] font-medium" : "text-[#4d6d8c]"}`} onClick={() => setSemesterTab(id)}>
+                    {id}
+                  </button>
+                ))}
+              {tab === "finals" &&
+                (["grid", "plan", "dean"] as const).map((id) => (
+                  <button key={id} type="button" className={`px-4 py-2 text-left capitalize ${finalsTab === id ? "border-r-2 border-[#00356B] font-medium" : "text-[#4d6d8c]"}`} onClick={() => setFinalsTab(id)}>
+                    {id === "dean" ? "College dean" : id}
+                  </button>
+                ))}
+            </div>
+          </nav>
+        )}
+
+      <main className="flex-1 flex flex-col gap-6 px-4 py-6">
         {tab === "today" && (
           <SemesterPlan
             courses={courses}
@@ -413,6 +411,7 @@ export function ReadingPeriod() {
         </>
         )}
       </main>
+      </div>
 
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent className="sm:max-w-lg">

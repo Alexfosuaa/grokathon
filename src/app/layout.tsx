@@ -13,8 +13,8 @@ const heading = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: "YLearn",
-  description: "Yale College, Fall 2026. What you still need on each exam, and where those exams sit.",
+  title: "YScholar",
+  description: "Your AI-powered study companion at Yale. Smart study plans, exam insights, grade tracking, and finals grid.",
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
