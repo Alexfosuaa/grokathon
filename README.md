@@ -1,28 +1,39 @@
 # YScholar
 
-Your AI-powered study companion at Yale. Built for the Grokathon.
+**Your AI-powered study companion at Yale.** Built for the Grokathon.
 
-YScholar helps Yale College students plan their semester, track grades, prepare for finals, and share exam feedback — all in one place, powered by Grok AI running in the background.
+## Demo
 
-## Features
+https://github.com/Alexfosuaa/grokathon/blob/main/demo.mp4
 
-- **AI Study Planner** — Grok AI generates personalized weekly study plans that adjust based on your logged activity, upcoming deadlines, and exam schedule.
-- **Grade Tracker** — Enter your syllabus weights and scores. YScholar tells you what you need on the final to hit your target grade.
-- **Finals Grid** — The full Fall 2026 exam grid from the Yale College Programs of Study. See your exams laid out by day and time, spot conflicts, and check if you qualify for a dean's postponement.
-- **Exam Huddle** — Anonymous exam feedback from Yale students. See what showed up on past exams for your courses, difficulty ratings, and tips. After you finish an exam, pay it forward.
-- **Calendar** — Import your Canvas calendar feed. Personal events (The Game, a concert, a trip) shift your study suggestions earlier in the week.
-- **Smart Notifications** — Grok AI surfaces suggestions as toasts: what to study, when to switch courses, how to allocate your reading period.
-- **Onboarding** — Yale-only sign-in, class year, residential college, major. Load sample courses or add your own.
-- **Settings** — Connect Canvas and Google Calendar. Manage your profile. Reset data.
+## The Problem
 
-## How it works
+Yale students juggle 4–5 courses with a compressed finals period — 8 days, rigid exam groups, overlapping slots. There's no single tool that connects their course load, exam schedule, grade targets, and study strategy. Students piece it together across spreadsheets, GroupMe threads, and word-of-mouth exam tips that disappear every semester.
+
+The result: wasted study time, missed exam intel, and no way to know if you're on track until it's too late.
+
+## What YScholar Does
+
+YScholar is a single dashboard that brings together everything a Yale student needs during reading period and finals:
+
+- **AI Study Planner** — Grok AI generates daily and weekly study plans based on your courses, exam dates, formats, and target grades. Plans adjust as you log activity.
+- **Grade Tracker** — Enter syllabus weights and scores. See exactly what you need on the final to hit your target grade.
+- **Finals Grid** — The full Fall 2026 Yale exam grid (December 15–22). Your exams are highlighted. Spot conflicts and check dean's postponement eligibility.
+- **Exam Huddle** — Anonymous exam feedback from Yale students. Difficulty ratings, what showed up, and tips — real intel from people who already took the exam.
+- **Grok AI Chat** — Ask Grok anything about your courses. It knows your schedule, your grades, your exam formats. Personalized answers, not generic study advice.
+- **Smart Notifications** — Grok surfaces study suggestions as toasts throughout the session.
+- **Calendar Integration** — Connect Canvas and Google Calendar feeds for smarter scheduling.
+- **Yale-Only Access** — `@yale.edu` sign-in, residential college, class year, major.
+
+## How It Works
 
 1. Sign in with your `@yale.edu` email
-2. Complete the two-step onboarding (profile + courses)
-3. The dashboard opens with your AI-generated study plan for today
+2. Complete two-step onboarding (profile + courses)
+3. The dashboard opens with your AI-generated study plan
 4. Navigate the sidebar: Today, This Week, Courses, Grades, Calendar, Finals, Huddle, Settings
+5. Chat with Grok AI anytime via the floating assistant
 
-Grok AI runs in the background, analyzing your course load, exam schedule, grade targets, and study logs to generate adaptive suggestions. The AI recalculates when you log study sessions, change target grades, or update your calendar.
+Grok AI runs in the background, analyzing your course load, exam schedule, grade targets, and Huddle feedback to generate adaptive suggestions.
 
 ## Built with Grok AI
 
@@ -33,32 +44,48 @@ This project was built during the Grokathon using Grok AI as the development ass
 - UI/UX design decisions
 - Code generation and debugging
 
-The in-app AI assistant is also powered by Grok, providing real-time study suggestions and adaptive planning.
+The in-app AI assistant is also powered by Grok, providing real-time study suggestions and streaming chat via the xAI API.
 
-## Adaptive Learning (Coming Soon)
+## The Gap: Adaptive Learning (Coming Soon)
 
-YScholar's next milestone is a personalized learning model that adapts to each student's study behavior over time. By tracking how long a student spends studying each subject, which study strategies they use, when they study most effectively, and how their scores improve, Grok AI can build a profile of each learner. Over time the model will:
+The biggest gap in student tools today is personalization. Every student studies differently — some need 14 hours for physics and 4 for a seminar; others are the opposite. Current tools treat everyone the same.
 
-- **Learn your pace** — Predict how many hours you actually need per course based on your past study sessions, not just generic estimates.
-- **Identify weak spots** — Detect which topics or formats (problem sets vs. essays vs. blue books) take you longer, and shift study time accordingly.
-- **Optimize scheduling** — Learn when you're most productive (morning vs. night) and suggest study blocks during your peak focus windows.
-- **Improve recommendations** — Weight Huddle tips from students with similar study profiles, so the advice you see is from people who learn like you.
+YScholar's next milestone is a **personalized learning model** that adapts to each student over time:
 
-The foundation is already in place: YScholar tracks courses, grades, exam formats, and study plans. The next step is feeding that data back into Grok to create a continuously improving, student-specific study model.
+- **Learn your pace** — Track how long you actually spend per course and predict future study needs based on your history, not generic estimates.
+- **Identify weak spots** — Detect which formats (problem sets vs. essays vs. blue books) take you longer and shift time accordingly.
+- **Optimize scheduling** — Learn when you're most productive (morning vs. night, long blocks vs. short sprints) and suggest study windows during peak focus.
+- **Smarter Huddle** — Weight exam tips from students with similar study profiles, so the advice you see comes from people who learn like you.
+- **Spaced repetition** — Integrate forgetting curves so Grok reminds you to revisit material at the optimal interval before your exam.
 
-## Tech stack
+The foundation is already in place: YScholar tracks courses, grades, exam formats, study plans, and peer feedback. The next step is feeding that data back into Grok to create a continuously improving, student-specific model.
+
+## What We'd Build with More Time
+
+- **Canvas auto-import** — Pull courses, assignments, and grades directly from the Canvas API instead of manual entry.
+- **Study session timer** — Built-in Pomodoro timer that logs study hours per course automatically, feeding the adaptive model.
+- **Collaborative study groups** — Match students in the same exam group for group study sessions, with Grok suggesting optimal group sizes and times.
+- **Historical Huddle analytics** — Aggregate years of exam feedback into difficulty trends, topic frequency charts, and format breakdowns per course.
+- **Mobile app** — React Native companion for on-the-go study tracking and push notification reminders.
+- **Multi-semester tracking** — Carry study profiles across semesters so Grok's model improves year over year.
+- **Professor-side dashboard** — Anonymous, aggregated study data so professors can see where students struggle and adjust accordingly.
+- **Yale SSO integration** — CAS authentication for real Yale identity verification.
+
+## Tech Stack
 
 - **Next.js 15** with App Router
 - **React 19** with client-side state
 - **Tailwind CSS 4** for styling
 - **shadcn/ui** components
-- **TypeScript** throughout
 - **Grok API** (xAI) for real-time AI chat and study assistance
-- **localStorage** for persistence (no backend needed)
+- **TypeScript** throughout
+- **localStorage** for client-side persistence
 
-## Run it
+## Run It
 
 ```bash
+git clone https://github.com/Alexfosuaa/grokathon.git
+cd grokathon
 npm install
 echo "GROK_API_KEY=your-xai-api-key" > .env.local
 npm run dev
@@ -66,8 +93,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## What the grid is based on
+## Data & Privacy
 
-Exam groups, meeting times, and the December 15-22 schedule come from the Yale College Programs of Study for 2026-2027. The calendar comes from the Yale College calendar. Postponement rules come from Academic Regulations, section H. A residential college dean decides. The app is a planning aid.
-
-All numbers are suggestions, not grades in Yale Hub. Yale College does not publish a percentage scale. Sample data stays labeled as samples. Everything stays in this browser.
+Everything stays in your browser via localStorage — no backend database, no data leaves your machine except Grok AI chat queries. Sample data is clearly labeled. Exam groups and the December 15–22 schedule come from the Yale College Programs of Study for 2026–2027. Postponement rules come from Academic Regulations, section H. All numbers are study suggestions, not official grades.
